@@ -38,23 +38,23 @@ sealed trait Stream[+A]{
 		case Empty => z 
 	}
 
-// 	def forAll(p: A => Boolean): Boolean = {
-// 		this.foldRight(true)((a, r) => p(a) && r)
-// 	}
+	def forAll(p: A => Boolean): Boolean = {
+		this.foldRight(true)((a, r) => p(a) && r)
+	}
 
-// 	def takeWhileByfoldRight(p: A => Boolean): Stream[A] = {
-// 		this.foldRight(Stream[A]())((a, r) => if (p(a)) Cons(() => a, () => r)
-// 										      else Cons(() => a, () => Empty))
-// 	}
+	def takeWhileByfoldRight(p: A => Boolean): Stream[A] = {
+		this.foldRight(Stream[A]())((a, r) => if (p(a)) Cons(() => a, () => r)
+										      else Cons(() => a, () => Empty))
+	}
 
-// 	def map[B](f: A => B): Stream[B] = {
-// 		this.foldRight(Stream[B]())((a, r) => Cons(() => f(a), () => r))
-// 	}
+	def map[B](f: A => B): Stream[B] = {
+		this.foldRight(Stream[B]())((a, r) => Cons(() => f(a), () => r))
+	}
 
-// 	def filter(f: A => Boolean) : Stream[A] = {
-// 		this.foldRight(Stream[A]())((a, r) => if (f(a)) Cons(() => a, () => r)
-// 			                                  else r)
-// 	}
+	def filter(f: A => Boolean) : Stream[A] = {
+		this.foldRight(Stream[A]())((a, r) => if (f(a)) Cons(() => a, () => r)
+			                                  else r)
+	}
 
 // 	// def append(s: Stream[A]): Stream[A] = {
 // 	// 	// this.foldRight(s)((a, r）=> Cons(() => a, () => r))

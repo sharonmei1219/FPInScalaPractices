@@ -35,15 +35,61 @@ sealed trait Stream[+A]{
 		case Empty => z
 	}
 
-	
+	def forAll(p: A => Boolean) = {
+		this.foldRight(true)((a, r) => p(a) && r)
+	}
+
+	def takeWhileByFoldRight(p: A => Boolean): Stream[A] = {
+		this.foldRight(Stream[A]())((a, r) => if (p(a)) Cons(() => a, () => r)
+			                                  else Empty)
+	}
+
+	def map[B](f: A => B): Stream[B] = {
+		this.foldRight(Stream[B]())((a, r) => Cons(()=>f(a), ()=>r))
+	}
+
+	def filter(f: A => Boolean) : Stream[A] = {
+		this.foldRight(Stream[A]())((a, r) => if(f(a)) Cons(() => a, ()=>r)
+	                                          else r)
+	}
+
+	def append[B >: A](s: => Stream[B]): Stream[B] = {
+		this.foldRight(s)((a, r) => Cons(() => a, () => r))
+	}
+
+	def flatMap[B](f: A => Stream[B]): Stream[B] = {
+		this.foldRight(Stream[B]())((a, s) => f(a).append(s))
+	}
 
 }
 case object Empty extends Stream[Nothing]
 case class Cons[+A](h: () => A, t: () => Stream[A]) extends Stream[A]
 
 object Stream{
+	def empty[A]: Stream[A] = Empty
+
+	val ones: Stream[Int] = cons(1, ones)
+
+	def cons[A](hd: => A, tl: => Stream[A]): Stream[A] = {
+		lazy val head = hd
+		lazy val tail = tl
+		Cons(() => head, () => tail)
+	}
+
 	def apply[A](as: A*): Stream[A] = {
 		if (as.isEmpty) Empty
 		else Cons(() => as.head, () => apply(as.tail: _*))
+	}
+
+	def constant[A](a: A): Stream[A] = cons(a, constant(a))
+
+	def from(n: Int): Stream[Int] = cons(n, from(n + 1))
+
+	def fibs: Stream[Int] = {
+		def upComing(a: Int, b: Int): Stream[Int] = {
+			cons(a, upComing(b, a+b))
+		}
+
+		upComing(0, 1)
 	}
 }
