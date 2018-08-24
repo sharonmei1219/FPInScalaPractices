@@ -86,10 +86,28 @@ object Stream{
 	def from(n: Int): Stream[Int] = cons(n, from(n + 1))
 
 	def fibs: Stream[Int] = {
-		def upComing(a: Int, b: Int): Stream[Int] = {
-			cons(a, upComing(b, a+b))
+		def go(a: Int, b: Int): Stream[Int] = {
+			cons(a, go(b, a+b))
 		}
 
-		upComing(0, 1)
+		go(0, 1)
+	}
+
+	def unfold[A, S](s: S)(f: S => Option[(A, S)]): Stream[A] = f(s) match {
+		case Some((aa, ss)) => cons(aa, unfold(ss)(f))
+		case _ => Empty 
+	}
+
+	def fibsByUnfold: Stream[Int] = unfold((0, 1))((t) => Option(t._1, (t._2, t._1 + t._2)))
+
+	def fromByUnfold(n: Int): Stream[Int] = unfold(n)(t => Option(t, t+1))
+
+	def constantByUnfold[A](a: A): Stream[A] = unfold(a)(t => Option(a, a))
+
+	def onesByUnfold: Stream[Int] = constantByUnfold(1)
+
+	def mapByUnfold[A, B](s: Stream[A])(f: A=>B): Stream[B] = {
+		ff(s) => f(a) nextS
+		unfold()
 	}
 }
