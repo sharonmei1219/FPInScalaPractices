@@ -107,7 +107,34 @@ object Stream{
 	def onesByUnfold: Stream[Int] = constantByUnfold(1)
 
 	def mapByUnfold[A, B](s: Stream[A])(f: A=>B): Stream[B] = {
-		ff(s) => f(a) nextS
-		unfold()
+		unfold(s)(s => s match {
+			case Cons(h, t) => Option((f(h()), t())) 
+			case _ => None
+		})
+	}
+
+	def takeByUnfold[A](s: Stream[A], n: Int): Stream[A] = {
+		unfold((n, s))(t => t._2 match {
+			case Cons(h, tt) => if(t._1 == 0) None else Option(h(), (t._1 - 1, tt()))
+			case _ => None 
+		})
+	}
+
+	def zipByUnfold[A, B, C](s1: Stream[A], s2: Stream[B])(f: (A, B) => C) : Stream[C] = {
+		unfold((s1, s2))(t => (t._1, t._2) match {
+			case (Cons(h1, t1), Cons(h2, t2)) => Option(f(h1(), h2()),  (t1(), t2()))
+			case _ => None
+		})
+	}
+
+	def startWith[A](s1: Stream[A], s2: Stream[A]) : Boolean = {
+		(zipByUnfold(s1, s2)(_ == _)).forAll(b => b)
+	}
+
+	def tails[A](s: Stream[A]): Stream[Stream[A]] = {
+		unfold(s)(s => match {
+			case Cons(h, t) => (s, t())
+			case _ => Empty 
+		})
 	}
 }
