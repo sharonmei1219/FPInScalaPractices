@@ -53,4 +53,53 @@ object RNG{
 
 		go(count, rng, l => l)
 	}
+
+	type Rand[+A] = RNG => (A, RNG)
+
+	val int: Rand[Int] = _.nextInt
+
+	def unit[A](a: A): Rand[A] = rng => (a, rng)
+
+	def map[A,B](s: Rand[A])(f: A => B): Rand[B] = rng => { 
+		val (a, rng2) = s(rng)
+		(f(a), rng2)
+	}
+
+	def positiveMax(n: Int): Rand[Int] = {
+		map(double)(a => (a*n).toInt)
+	}
+
+	def double2 : Rand[Double] = map(positiveInt)(_/(Int.MaxValue.toDouble+1))
+
+	def map2[A, B, C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] = {
+		rng => {
+			val (a, r1) = ra(rng)
+			val (b, r2) = rb(r1)
+			(f(a, b), r2)
+		}
+	}
+
+	def sequence[A](fs: List[Rand[A]]): Rand[List[A]] = {
+		fs.foldRight(unit(List[A]()))((f, r) => map2(f, r)(_::_))
+		// fs.foldRight(rng => (unit(List[A]()))((a: Rand[A], r) => {
+		// 	nr => {
+		// 		val (aa, rr) = a(nr)
+		// 		(aa::r._1, rr)
+		// 	}
+		// })
+
+
+
+		// rng => {
+		// 	def go(fs: List[Rand[A]], fl: List[A] => List[A], nr: RNG) => fs match {
+		// 		case h::t => {	
+		// 				(aa, rr) = h(nr)
+		// 				go(t, ll => fl(aa::ll), rr)
+		// 			}
+		// 		case _ => (fl(List[A]()), nr)
+		// 	}
+
+		// 	go(fs, l => l, rng)
+		// }
+	}
 }
