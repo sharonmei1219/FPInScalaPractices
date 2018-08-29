@@ -102,4 +102,64 @@ object RNG{
 		// 	go(fs, l => l, rng)
 		// }
 	}
+
+
+	def flapMap[A, B](f: Rand[A])(g: A => Rand[B]): Rand[B] = {
+		rng => {
+			val (aa, r1) = f(rng)
+			g(aa)(r1)
+		}
+	}
+
+	def _map[A, B](f: Rand[A])(g: A => B): Rand[B] = {
+		flapMap(f)(a => unit(g(a)))
+	}
+
+	def map2ByFlatMap[A, B, C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] = {
+		flapMap(rb)(b => _map(ra)(a => f(a, b)))
+	}
+}
+
+import State._
+case class State[S, +A] (run: S => (A, S)){
+
+	def flatMap[B](f: A => State[S, B]): State[S, B] =
+		State(ss => {
+			val (a, s) = run(ss)
+			f(a).run(s)
+		})
+
+	def map[B](f: A => B): State[S, B] = flatMap(a => unit(f(a)))
+
+	def map2[B, C](sb: State[S, B])(f: (A, B) => C): State[S, C] = flatMap(a => sb map(b => f(a, b))) 
+
+}
+
+object State{
+	def unit[S, A](a: A): State[S, A] = State(s => (a, s))
+
+	def sequence[S, A](l: List[State[S, A]]) : State[S, List[A]] = 
+		l.foldRight(unit[S, List[A]](List[A]()))((s, r) => s.map2(r)(_::_))
+
+
+	def modify[S](f: S => S): State[S, Unit] = for{
+		s <- get
+		_ <- set(f(s))
+	} yield ()
+
+
+	def get[S] :State[S, S] = State(s => (s, s))
+	def set[S](s: S) :State[S, Unit] = State(_ => ((), s))
+
+	// def modify2[S](f: S=>S): State(S, Unit) = {
+	// 	get.flapMap(s => set(f(s)))
+	// }
+
+	// s => {
+	// 	(a, ss) = get.run(s)
+	// 	//(s, s)
+	// 	set(f(s))(ss)
+	// 	(_ => (Unit, f(s)))(ss)
+	// }
+
 }
