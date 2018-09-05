@@ -147,19 +147,36 @@ object State{
 		_ <- set(f(s))
 	} yield ()
 
+	// modify is a function turn a state transition represent by function f to a State, which at its heart is a state transition
+	// set(f(s)) returns function, A => State(_ => State(((), f(s))), no matter what input is provided to this function, it always return State((), f(s))
+	// f(s) must be set prior to set, which is a function factory  
 
 	def get[S] :State[S, S] = State(s => (s, s))
 	def set[S](s: S) :State[S, Unit] = State(_ => ((), s))
-
-	// def modify2[S](f: S=>S): State(S, Unit) = {
-	// 	get.flapMap(s => set(f(s)))
-	// }
-
-	// s => {
-	// 	(a, ss) = get.run(s)
-	// 	//(s, s)
-	// 	set(f(s))(ss)
-	// 	(_ => (Unit, f(s)))(ss)
-	// }
+	// 
 
 }
+
+sealed trait Input
+case object Coin extends Input
+case object Turn extends Input
+
+case class Machine(locked: Boolean, candies: Int, coins: Int)
+
+object Candy{
+
+	def update = (i: Input) => (s: Machine) => (i, s) match {
+		case (_, Machine(_, 0, _)) => s
+		case (Coin, Machine(false, _, _)) => s
+		case (Coin, Machine(true, candies, coins)) => Machine(false, candies, coins + 1)
+		case (Turn, Machine(false, candies, coins)) => Machine(true, candies - 1, coins)
+		case (Turn, Machine(true, _, _)) => s 
+	}
+
+	def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = for{
+		_ <- sequence(inputs map (modify[Machine] _ compose update))
+		s <- get
+	}yield (s.coins, s.candies)
+		
+}
+
